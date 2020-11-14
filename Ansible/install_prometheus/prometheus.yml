@@ -1,0 +1,151 @@
+- hosts: zabbix
+  user: root
+  become: true
+  vars:
+    - service_prom: prometheus
+    - service_aler: alertmanager
+    - service_node: node_exporter
+    - vprom: 2.22.1
+    - valert: 0.21.0
+    - vnode: 1.0.1
+    - prometheus: prometheus-{{vprom}}.linux-amd64
+    - alertmanager: alertmanager-{{valert}}.linux-amd64
+    - node_exporter: node_exporter-{{vnode}}.linux-amd64
+    - temp_dir: /root/TEMP/
+    - dir_prom: /etc/{{service_prom}}
+    - data_dir_prom: /var/lib/{{service_prom}}
+    - dir_alert: /etc/{{service_aler}}
+    - data_dir_alert: /var/lib/{{service_prom}}/{{service_aler}}
+    - user_prom: prometheus
+    - user_alert: alertmanager
+    - user_node: nodeusr
+    - user_root: root
+
+  tasks:
+   - name: Create TEMP directory
+     file:
+       path: "{{temp_dir}}"
+       state: directory
+   - name: Check arhives
+     stat:
+       path: "{{temp_dir}}{{prometheus}}.tar.gz"
+     register: stat_result
+     
+   - name: Downloads prometheus, alertmanager, node_exporter
+     get_url:
+       url: "{{item}}"
+       dest: "{{temp_dir}}"
+       timeout: 60
+     with_items:
+       - https://github.com/prometheus/prometheus/releases/download/v{{vprom}}/{{prometheus}}.tar.gz
+       - https://github.com/prometheus/alertmanager/releases/download/v{{valert}}/{{alertmanager}}.tar.gz
+       - https://github.com/prometheus/node_exporter/releases/download/v{{vnode}}/{{node_exporter}}.tar.gz
+     when: stat_result.stat.exists == false
+
+   - name: Create users
+     user:
+       name: "{{item}}"
+       shell: /sbin/nologin
+       create_home: no
+       state: present
+     with_items:
+       - "{{user_prom}}"
+       - "{{user_alert}}"
+       - "{{user_node}}"
+
+   - name: Create directorys
+     file:
+       path: "{{item.path}}"
+       owner: "{{item.owner}}"
+       group: "{{item.group}}"
+       state: directory
+     with_items:
+       - {path: "{{dir_prom}}",       owner: "{{user_prom}}",  group: "{{user_prom}}" }
+       - {path: "{{data_dir_prom}}",  owner: "{{user_prom}}",  group: "{{user_prom}}" }
+       - {path: "{{dir_alert}}",      owner: "{{user_alert}}", group: "{{user_alert}}" }
+       - {path: "{{data_dir_alert}}", owner: "{{user_alert}}", group: "{{user_alert}}"}
+
+   - name: Extract files
+     shell: tar -C "{{item.dir}}" -zxvf "{{item.arh}}"
+     args:
+         executable: /bin/bash
+     with_items:
+       - {arh: "{{temp_dir}}{{prometheus}}.tar.gz" ,    dir: "{{temp_dir}}"}
+       - {arh: "{{temp_dir}}{{alertmanager}}.tar.gz" ,  dir: "{{temp_dir}}"}
+       - {arh: "{{temp_dir}}{{node_exporter}}.tar.gz" , dir: "{{temp_dir}}"}
+
+   - name: Copy files
+     copy:
+      remote_src: yes
+      src: "{{item.file_src}}"
+      dest: "{{item.file_dest}}"
+      owner: "{{item.file_owner}}"
+      group: "{{item.file_group}}"
+      mode: "{{item.file_mode}}"
+     with_items:
+       - {file_src: "{{temp_dir}}{{prometheus}}/prometheus",         file_dest: /usr/local/bin/, file_owner: "{{user_prom}}",  file_group: "{{user_prom}}",  file_mode: '0755'}
+       - {file_src: "{{temp_dir}}{{prometheus}}/promtool",           file_dest: /usr/local/bin/, file_owner: "{{user_prom}}",  file_group: "{{user_prom}}",  file_mode: '0755'}
+       - {file_src: "{{temp_dir}}{{prometheus}}/console_libraries",  file_dest: "{{dir_prom}}",  file_owner: "{{user_prom}}",  file_group: "{{user_prom}}",  file_mode: '0644'}
+       - {file_src: "{{temp_dir}}{{prometheus}}/consoles",           file_dest: "{{dir_prom}}",  file_owner: "{{user_prom}}",  file_group: "{{user_prom}}",  file_mode: '0644'}
+       - {file_src: "{{temp_dir}}{{prometheus}}/prometheus.yml",     file_dest: "{{dir_prom}}",  file_owner: "{{user_prom}}",  file_group: "{{user_prom}}",  file_mode: '0644'}
+       - {file_src: "{{temp_dir}}{{alertmanager}}/alertmanager",     file_dest: /usr/local/bin/, file_owner: "{{user_alert}}", file_group: "{{user_alert}}", file_mode: '0755'}
+       - {file_src: "{{temp_dir}}{{alertmanager}}/amtool",           file_dest: /usr/local/bin/, file_owner: "{{user_alert}}", file_group: "{{user_alert}}", file_mode: '0755'}
+       - {file_src: "{{temp_dir}}{{alertmanager}}/alertmanager.yml", file_dest: "{{dir_alert}}", file_owner: "{{user_alert}}", file_group: "{{user_alert}}", file_mode: '0644'}
+       - {file_src: "{{temp_dir}}{{node_exporter}}/node_exporter",   file_dest: /usr/local/bin/, file_owner: "{{user_node}}",  file_group: "{{user_node}}",  file_mode: '0755'}
+
+   - name: Touch service files systemd
+     file:
+       path: "{{item.file_name}}"
+       state: touch
+       owner: "{{item.file_owner}}"
+       group: "{{item.file_group}}"
+     with_items:
+       - {file_name: "/etc/systemd/system/{{service_prom}}.service" ,    file_owner: "{{user_root}}",  file_group: "{{user_root}}" }
+       - {file_name: "/etc/systemd/system/{{service_aler}}.service" ,  file_owner: "{{user_root}}", file_group: "{{user_root}}" }
+       - {file_name: "/etc/systemd/system/{{service_node}}.service" , file_owner: "{{user_root}}",  file_group: "{{user_root}}" }
+
+   - name: Create
+     shell: |
+            cat <<EOF > {{item.file_name}}
+            [Unit]
+            Description={{item.name_service}}
+            After=network.target
+
+            [Service]
+            User={{item.t_user}}
+            Group={{item.t_group}}
+            Type=simple
+            ExecStart={{item.execstart}}
+            ExecReload=/bin/kill -HUP \$MAINPID
+            Restart=on-failure
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+     args:
+       executable: /bin/bash
+     with_items:
+       - {name_service: "Node Exporter Service",
+          t_user: "{{user_node}}",
+          t_group: "{{user_node}}",
+          file_name: "/etc/systemd/system/{{service_node}}.service" ,
+          execstart: /usr/local/bin/node_exporter }
+       - {name_service: "Alertmanager Service",
+          t_user: "{{user_alert}}",
+          t_group: "{{user_alert}}",
+          file_name: "/etc/systemd/system/{{service_aler}}.service" ,
+          execstart: "/usr/local/bin/alertmanager --config.file={{dir_alert}}/alertmanager.yml --storage.path={{data_dir_alert}}/alertmanager \\$ALERTMANAGER_OPTS"}
+       - {name_service: "Prometheus Service",
+          t_user: "{{user_prom}}",
+          t_group: "{{user_prom}}",
+          file_name: "/etc/systemd/system/{{service_prom}}.service" ,
+          execstart: "/usr/local/bin/prometheus --config.file {{dir_prom}}/prometheus.yml --storage.tsdb.path {{data_dir_prom}}/ --web.console.templates={{dir_prom}}/consoles --web.console.libraries={{dir_prom}}/console_libraries"}
+   - name: Enable services started.
+     systemd:
+       name: "{{item}}"
+       enabled: yes
+       state: started
+     loop:
+       - "{{service_prom}}"
+       - "{{service_aler}}"
+       - "{{service_node}}"
