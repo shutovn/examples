@@ -17,4 +17,4 @@ Chapter - Ansible
   - vprom: (указать необходимую версию - которую можно узнать на сайте https://prometheus.io)
   - user_prom: (указать пользователя от имени которого будет запускаться и работать сервис)
   
-  Пример запуска  $ ansible-playbook prometheus.yml -i host
+  Пример запуска  $ ansible-playbook prometheus.yml -i hosts
