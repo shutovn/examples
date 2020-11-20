@@ -1,0 +1,23 @@
+- hosts: all
+  user: test
+  become: true
+  become_method: sudo
+  become_user: root
+  vars:
+    - packages:
+         - mc
+         - telnet
+         - net-tools
+  tasks:
+    - name: Install Packages Centos
+      yum:
+         name: "{{ packages }}"
+         update_cache: yes
+         state: present
+      when: ansible_distribution == "CentOS"
+    - name: Install Packages Ubuntu
+      apt:
+        name: "{{ packages }}"
+        update_cache: yes
+        state: present
+      when: ansible_distribution == "Ubuntu"
