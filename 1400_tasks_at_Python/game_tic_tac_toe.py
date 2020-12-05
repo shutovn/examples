@@ -1,7 +1,6 @@
 """
 Игра крестики-нолики!
 Для двух игроков, с размером поля 3х3
-
 """
 
 # Импортируем фунцию random для случайного выбора игрока, который будет ходить первым.
@@ -9,6 +8,7 @@ import random
 # Импортируем фунцию call для очистки дисплей в случае если игроки захотят сыграть еще раз.
 from subprocess import call
 
+# Переменные для использования имен игроков
 player1_name = ''
 player2_name = ''
 
@@ -30,12 +30,17 @@ def display_board(board):
     print ("\t","  Нолики  0")
 
 def player_name():
+    '''
+    Запрашивает именна игроков и записывает их в глобальные переменные.
+    '''
     global player1_name,player2_name
     player1_name = (input("Введите имя для первого игрока: "))
     player2_name = (input("Введите имя для второго игрока: "))
 
 def player_input():
-
+    '''
+    Устанавливаем первому игроку X или 0
+    '''
     marker = ''
     while not (marker == 'X' or marker == 'O'):
         marker = input(player1_name + ': Выберите себе маркер, X или O?').upper()
@@ -49,17 +54,22 @@ def place_marker(board, marker, position):
     board[position] = marker
 
 def win_check(board,mark):
-
-    return ((board[7] == board[8] == board[9] == mark) or # across the top
-    (board[4] == board[5] == board[6] == mark) or # across the middle
-    (board[1] == board[2] == board[3] == mark) or # across the bottom
-    (board[7] == board[4] == board[1] == mark) or # down the middle
-    (board[8] == board[5] == board[2] == mark) or # down the middle
-    (board[9] == board[6] == board[3] == mark) or # down the right side
-    (board[7] == board[5] == board[3] == mark) or # diagonal
-    (board[9] == board[5] == board[1] == mark)) # diagonal
+    '''
+    Выиграшные комбинации
+    '''
+    return ((board[7] == board[8] == board[9] == mark) or # Слева на право низ
+    (board[4] == board[5] == board[6] == mark) or # Слева на право середина
+    (board[1] == board[2] == board[3] == mark) or # Слева на право верх
+    (board[7] == board[4] == board[1] == mark) or # Снизу вверх слева
+    (board[8] == board[5] == board[2] == mark) or # Снизу вверх середина
+    (board[9] == board[6] == board[3] == mark) or # Снизу вверх справа
+    (board[7] == board[5] == board[3] == mark) or # Диоганаль слева на право
+    (board[9] == board[5] == board[1] == mark)) # Диагональ справа на лево
 
 def choose_first():
+    '''
+    Рандомный выбор игрока для первого хода.
+    '''
     if random.randint(0, 1) == 0:
         return player2_name
     else:
@@ -75,7 +85,9 @@ def full_board_check(board):
     return True
 
 def player_choice(board):
-    #
+    '''
+    Выбор позиции пользователем.
+    '''
     position = ' '
     while position not in '1 2 3 4 5 6 7 8 9'.split() or not space_check(board, int(position)):
 
