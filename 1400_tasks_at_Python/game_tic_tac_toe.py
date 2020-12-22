@@ -19,15 +19,15 @@ def display_board(board):
     # Очищаем дисплей перед отрисовкой поля
     call("clear")
     # игровое поле
-    print ("\t"," Крестики  Х ")
+    print ("\t",str(" ")+str(player1_name)+str(" ")+str(player1_marker))
     print ("\t","-------------")
-    print ("\t","|", board[1] ,"|", board[2] ,"|", board[3] ,"|","\t","Текущий ход за игроком: " + turn)
+    print ("\t","|", board[1] ,"|", board[2] ,"|", board[3] ,"|","\t","Текущий ход за игроком: " +str(turn))
     print ("\t","-------------")
     print ("\t","|", board[4] ,"|", board[5] ,"|", board[6] ,"|","\t")
     print ("\t","-------------")
     print ("\t","|", board[7] ,"|", board[8] ,"|", board[9] ,"|","\t")
     print ("\t","-------------")
-    print ("\t","  Нолики  0")
+    print ("\t",str(" ")+str(player2_name)+str(" ")+str(player2_marker))
 
 def player_name():
     '''
