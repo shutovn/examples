@@ -12,4 +12,5 @@ for i in n[::]:
 sum = 0
 for i in range(len(numbers)):
     sum  = sum + int(numbers[i])
+    
 print("Сумма цифр введенного числа = "+str(sum))
