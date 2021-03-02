@@ -13,5 +13,9 @@ h=$(hostname)
 sha=$(echo -n "${i}" | md5sum -)
 msg=$(head -c 50 /dev/urandom | base64 | sed 's/[+=/A-Z]//g' | tail -c50)
 
-echo "${i} ${ts} ${h} ${sha} ${msg}" >> $log_file
+level=(LOG INFO ERROR WARNING DEBUG)
+count=${#level[*]}
+l=${level[$((0 + $RANDOM % ${count}))]}
+
+echo "${i} ${ts} ${h} - ${l} - ${sha} ${msg}" >> $log_file
 done
