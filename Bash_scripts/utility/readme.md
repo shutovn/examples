@@ -7,3 +7,6 @@ ____
 ### difference_at_lists.sh
 Описание
 ____
+### gen_test_log.sh
+Описание
+____
