@@ -19,4 +19,4 @@ for l in ${delete_list[@]}; do
   cmd_delete=$(curl -X DELETE "$url_repo/v2/$progect/manifests/sha256:$var_manifests")
 done
 
-#  docker exec -it registry.dev.smartseeds.ru bin/registry garbage-collect /etc/docker/registry/config.yml
+#  docker exec -it docker.registry bin/registry garbage-collect /etc/docker/registry/config.yml
